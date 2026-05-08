@@ -1,130 +1,71 @@
-const boardEl = document.getElementById("board");
-const handEl = document.getElementById("hand");
-const bagCountEl = document.getElementById("bagCount");
-const validWordsEl = document.getElementById("validWords");
-const lastActionEl = document.getElementById("lastAction");
-const messageEl = document.getElementById("message");
+const GRID_SIZE = 20;
+let lastStateHash = null;
 
-const placeForm = document.getElementById("placeForm");
-const removeForm = document.getElementById("removeForm");
-const dumpForm = document.getElementById("dumpForm");
-const resetBtn = document.getElementById("resetBtn");
-const validateBtn = document.getElementById("validateBtn");
-
-function setMessage(payload, isError = false) {
-  messageEl.textContent = JSON.stringify(payload, null, 2);
-  messageEl.classList.toggle("error", isError);
+async function fetchState() {
+  try {
+    const res = await fetch("/api/state");
+    const state = await res.json();
+    const hash = JSON.stringify(state);
+    if (hash !== lastStateHash) {
+      lastStateHash = hash;
+      render(state);
+    }
+  } catch (_) {}
 }
 
-function renderBoard(grid) {
-  boardEl.innerHTML = "";
-  for (let r = 0; r < grid.length; r += 1) {
-    for (let c = 0; c < grid[r].length; c += 1) {
+function render(state) {
+  renderGrid(state.grid);
+  renderHand(state.hand);
+  renderWords(state.words, state.invalid_words);
+
+  document.getElementById("bag-count").textContent  = state.bag_count;
+  document.getElementById("hand-count").textContent = state.hand.length;
+  document.getElementById("last-action").textContent = state.last_action || "—";
+
+  document.getElementById("win-banner").classList.toggle("hidden", !state.won);
+}
+
+function renderGrid(grid) {
+  const container = document.getElementById("grid");
+  container.innerHTML = "";
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
       const cell = document.createElement("div");
       cell.className = "cell";
-      if (grid[r][c]) {
-        cell.classList.add("filled");
-        cell.textContent = grid[r][c];
-      }
       cell.title = `(${r}, ${c})`;
-      boardEl.appendChild(cell);
+      const letter = grid[r][c];
+      if (letter) {
+        cell.classList.add("filled");
+        cell.textContent = letter;
+      }
+      container.appendChild(cell);
     }
   }
 }
 
-function renderState(state) {
-  renderBoard(state.grid);
-  handEl.textContent = state.hand.join(" ");
-  bagCountEl.textContent = state.tile_bag_count;
-  validWordsEl.textContent = state.valid_words.length ? state.valid_words.join(", ") : "none";
-  lastActionEl.textContent = state.last_action || "none";
-}
-
-async function fetchJSON(url, options = {}) {
-  const response = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
+function renderHand(hand) {
+  const container = document.getElementById("hand-bar");
+  container.innerHTML = "";
+  hand.forEach(letter => {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.textContent = letter;
+    container.appendChild(tile);
   });
-
-  const body = await response.json();
-  if (!response.ok) {
-    throw body;
-  }
-  return body;
 }
 
-async function loadState() {
-  try {
-    const state = await fetchJSON("/api/state");
-    renderState(state);
-    setMessage({ info: "State loaded" });
-  } catch (err) {
-    setMessage(err, true);
+function renderWords(words, invalidWords) {
+  const area = document.getElementById("words-area");
+  if (!words.length) {
+    area.innerHTML = `<span style="color:var(--text-dim)">None yet</span>`;
+    return;
   }
+  const invalidSet = new Set(invalidWords);
+  area.innerHTML = words.map(w => {
+    const cls = invalidSet.has(w) ? "word-invalid" : "word-valid";
+    return `<span class="${cls}">${w}</span>`;
+  }).join("  ");
 }
 
-async function dispatchAction(action) {
-  try {
-    const result = await fetchJSON("/api/action", {
-      method: "POST",
-      body: JSON.stringify(action),
-    });
-    renderState(result.state);
-    setMessage(result);
-  } catch (err) {
-    const fallbackState = await fetchJSON("/api/state");
-    renderState(fallbackState);
-    setMessage(err, true);
-  }
-}
-
-placeForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const action = {
-    type: "place",
-    letter: document.getElementById("placeLetter").value,
-    row: Number(document.getElementById("placeRow").value),
-    col: Number(document.getElementById("placeCol").value),
-  };
-  await dispatchAction(action);
-});
-
-removeForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const action = {
-    type: "remove",
-    row: Number(document.getElementById("removeRow").value),
-    col: Number(document.getElementById("removeCol").value),
-  };
-  await dispatchAction(action);
-});
-
-dumpForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const action = {
-    type: "dump",
-    letter: document.getElementById("dumpLetter").value,
-  };
-  await dispatchAction(action);
-});
-
-resetBtn.addEventListener("click", async () => {
-  try {
-    const state = await fetchJSON("/api/reset", { method: "POST" });
-    renderState(state);
-    setMessage({ info: "Game reset" });
-  } catch (err) {
-    setMessage(err, true);
-  }
-});
-
-validateBtn.addEventListener("click", async () => {
-  try {
-    const result = await fetchJSON("/api/validate", { method: "POST" });
-    setMessage(result, result.invalid_words && result.invalid_words.length > 0);
-  } catch (err) {
-    setMessage(err, true);
-  }
-});
-
-loadState();
+fetchState();
+setInterval(fetchState, 500);

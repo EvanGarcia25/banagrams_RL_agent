@@ -1,59 +1,47 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Bananagrams RL Playground</title>
-    <link rel="stylesheet" href="/static/style.css" />
-  </head>
-  <body>
-    <main class="layout">
-      <section class="panel board-panel">
-        <header>
-          <h1>Bananagrams RL Playground</h1>
-          <p>Single-player clone with exact coordinate actions for humans and agents.</p>
-        </header>
-        <div id="board" class="board" aria-label="Game board"></div>
-      </section>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bananagrams</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
 
-      <section class="panel controls-panel">
-        <div class="status-grid">
-          <div><strong>Hand:</strong> <span id="hand"></span></div>
-          <div><strong>Tiles In Bag:</strong> <span id="bagCount"></span></div>
-          <div><strong>Valid Words:</strong> <span id="validWords"></span></div>
-          <div><strong>Last Action:</strong> <span id="lastAction"></span></div>
-        </div>
+  <!-- Hand tiles floating at top -->
+  <div class="hand-bar" id="hand-bar"></div>
 
-        <form id="placeForm" class="card">
-          <h2>Place Letter</h2>
-          <label>Letter <input id="placeLetter" maxlength="1" required /></label>
-          <label>Row <input id="placeRow" type="number" min="0" required /></label>
-          <label>Col <input id="placeCol" type="number" min="0" required /></label>
-          <button type="submit">Place</button>
-        </form>
+  <!-- Game grid centered on page -->
+  <div class="game-area">
+    <div class="grid" id="grid"></div>
+  </div>
 
-        <form id="removeForm" class="card">
-          <h2>Remove Letter</h2>
-          <label>Row <input id="removeRow" type="number" min="0" required /></label>
-          <label>Col <input id="removeCol" type="number" min="0" required /></label>
-          <button type="submit">Remove</button>
-        </form>
+  <!-- Branding bottom center -->
+  <div class="branding">BANANAGRAMS</div>
 
-        <form id="dumpForm" class="card">
-          <h2>Dump Letter</h2>
-          <label>Letter <input id="dumpLetter" maxlength="1" required /></label>
-          <button type="submit">Dump</button>
-        </form>
+  <!-- Info panel bottom right -->
+  <div class="info-panel">
+    <div class="info-row">
+      <span class="info-label">Tiles left in bag</span>
+      <span class="info-val" id="bag-count">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Hand size</span>
+      <span class="info-val" id="hand-count">—</span>
+    </div>
+    <div class="info-divider"></div>
+    <div class="info-section-title">Words on board</div>
+    <div id="words-area" class="words-area">—</div>
+    <div class="info-divider"></div>
+    <div class="info-section-title">Last action</div>
+    <div id="last-action" class="last-action-text">—</div>
+  </div>
 
-        <div class="button-row">
-          <button id="validateBtn">Validate Board</button>
-          <button id="resetBtn">Reset</button>
-        </div>
+  <!-- Win overlay -->
+  <div id="win-banner" class="win-banner hidden">
+    🎉 You Win! All tiles placed and all words valid.
+  </div>
 
-        <pre id="message" class="message" aria-live="polite"></pre>
-      </section>
-    </main>
-
-    <script src="/static/app.js"></script>
-  </body>
+  <script src="/static/app.js"></script>
+</body>
 </html>

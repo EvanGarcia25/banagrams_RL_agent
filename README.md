@@ -1,122 +1,113 @@
-# Bananagrams RL Agent Playground
+# Bananagrams RL — Baseline
 
-Minimal single-player Bananagrams clone in Python with:
-- a browser UI for manual play
-- a clean action API for RL/control agents
-- a shared game engine used by both
+Single-player Bananagrams game with a REST API and live browser display. Models can drive the game over HTTP or directly via Python method calls.
 
-## What Is Implemented
+---
 
-Core gameplay primitives (kept intentionally simple):
-- Fixed square grid (`15x15` by default)
-- Action: place one letter at a specific `(row, col)`
-- Action: remove one letter from `(row, col)` back to hand
-- Action: dump one hand letter and draw up to 3 replacements
-- Dictionary validation for all contiguous row/column words (length >= 2)
-- Connectivity rule: all placed tiles must stay in one connected component
-
-This is designed so a model can call exact low-level actions such as:
-
-```json
-{"type": "place", "letter": "A", "row": 7, "col": 8}
-```
-
-## Project Structure
-
-- `server.py`: Flask app + API endpoints
-- `bananagrams_rl/game.py`: game rules/state/actions
-- `bananagrams_rl/env.py`: tiny RL-style `step()` wrapper
-- `bananagrams_rl/dictionary.py`: dictionary loading
-- `templates/index.html`: browser UI
-- `static/app.js`: UI logic/API calls
-- `static/style.css`: styling
-- `example_agent.py`: simple scripted client example
-- `tests/test_game.py`: unit tests for core actions
-
-## Setup
+## Setup & run
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
+python3 server.py          # http://localhost:8080
 ```
 
-## Run Web App
+---
 
-```bash
-python server.py
+## Project structure
+
+```
+banagrams_RL_agent/
+├── game.py          # Core game logic — BananagramsGame class
+├── dictionary.py    # Word validation (system dict or fallback)
+├── server.py        # Flask server — API + browser UI (port 8080)
+├── requirements.txt # flask>=3.0.0
+├── static/
+│   ├── app.js       # Polls /api/state every 500ms, renders display
+│   └── style.css    # Dark grid UI
+└── templates/
+    └── index.html   # Full-page grid layout
 ```
 
-Then open:
+---
 
-`http://127.0.0.1:5000`
+## Game rules (singleplayer)
 
-## Dictionary Source
+- **144 tiles**, standard distribution (A×13, E×18, I×12, …)
+- **21 tiles** drawn to start; remaining 123 in the bag
+- Place tiles on a **20×20 grid** (rows/cols 0–19) to form interlocking words
+- **Peel** — hand empties while bag has tiles → 1 tile drawn automatically
+- **Dump** — return 1 tile to bag, draw 3 (requires ≥3 in bag)
+- **Win** — hand empty, bag empty, all words valid, board connected
 
-Priority order:
-1. `words.txt` in project root (if present)
-2. `/usr/share/dict/words` (default on macOS/Linux)
-3. Small built-in fallback word set
+---
 
-To customize the lexicon, create a root-level `words.txt` with one word per line.
+## API reference
 
-## RL / Agent API
+All `POST` action endpoints accept JSON and return `{"success": bool, "message": str, "state": {...}}`.
 
-### Get Current State
+| Method | Route | Body | Action |
+|--------|-------|------|--------|
+| GET | `/api/state` | — | Full game state |
+| POST | `/api/place` | `{"letter":"A","row":10,"col":10}` | Place tile from hand onto grid |
+| POST | `/api/remove` | `{"row":10,"col":10}` | Return grid tile to hand |
+| POST | `/api/dump` | `{"letter":"Q"}` | Return 1 tile, draw 3 |
+| POST | `/api/reset` | — | Fresh game, new 21-tile hand |
 
-`GET /api/state`
+### State object fields
 
-### Reset Game
+| Key | Type | Description |
+|---|---|---|
+| `grid` | `list[list[str\|None]]` | 20×20 board; `None` = empty |
+| `hand` | `list[str]` | Current tiles (sorted) |
+| `bag_count` | `int` | Tiles remaining in bag |
+| `words` | `list[str]` | All words (≥2 letters) on board |
+| `invalid_words` | `list[str]` | Words failing dictionary check |
+| `connected` | `bool` | All placed tiles form one group |
+| `tile_count` | `int` | Tiles currently on grid |
+| `done` | `bool` | Game ended |
+| `won` | `bool` | Game ended by winning |
+| `last_action` | `str` | Description of last move |
 
-`POST /api/reset`
+---
 
-### Apply Action
+## Driving the game
 
-`POST /api/action`
+### Option A — HTTP (out-of-process)
 
-Request body examples:
+```python
+import requests
+BASE = "http://localhost:8080"
 
-```json
-{"type": "place", "letter": "C", "row": 5, "col": 5}
+state = requests.get(f"{BASE}/api/state").json()
+requests.post(f"{BASE}/api/place",  json={"letter": "C", "row": 10, "col": 10})
+requests.post(f"{BASE}/api/remove", json={"row": 10, "col": 10})
+requests.post(f"{BASE}/api/dump",   json={"letter": "Q"})
+requests.post(f"{BASE}/api/reset")
 ```
 
-```json
-{"type": "remove", "row": 5, "col": 5}
+### Option B — Direct Python (in-process)
+
+```python
+from server import start_background, game  # shared instance
+
+start_background()   # browser display on port 8080, daemon thread
+
+while not game.done:
+    state = game.get_state()
+    result = game.place(state["hand"][0], 10, 10)
+    if not result["success"]:
+        break
+
+print("Won:", game.won)
 ```
 
-```json
-{"type": "dump", "letter": "Q"}
-```
+Both options return the same response format. The browser display updates automatically either way.
 
-Response shape:
+---
 
-```json
-{
-	"state": {"grid": [], "hand": [], "valid_words": []},
-	"reward": 0.1,
-	"done": false,
-	"info": {"error": null}
-}
-```
+## Tile distribution (144 total)
 
-### Validate Current Board
-
-`POST /api/validate`
-
-Returns both valid and invalid discovered words from current board.
-
-## Example Programmatic Agent
-
-With server running:
-
-```bash
-python example_agent.py
-```
-
-This sends random coordinate placement actions to demonstrate machine interaction.
-
-## Run Tests
-
-```bash
-python -m unittest discover -s tests
-```
+| A×13 | B×3 | C×3 | D×6 | E×18 | F×3 | G×4 | H×3 | I×12 | J×2 |
+|------|-----|-----|-----|------|-----|-----|-----|------|-----|
+| K×2 | L×5 | M×3 | N×8 | O×11 | P×3 | Q×2 | R×9 | S×6 | T×9 |
+| U×6 | V×3 | W×3 | X×2 | Y×3 | Z×2 | | | | |
