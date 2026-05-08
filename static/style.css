@@ -1,0 +1,151 @@
+:root {
+  --bg-top: #f4f7fb;
+  --bg-bottom: #dce8f2;
+  --panel: #ffffffcc;
+  --ink: #18212b;
+  --accent: #0a7f5a;
+  --accent-2: #175f7a;
+  --danger: #a03f3f;
+  --cell: #f8fbff;
+  --cell-border: #c7d7e6;
+  --tile: #fef6d0;
+  --tile-border: #c9b469;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: linear-gradient(150deg, var(--bg-top), var(--bg-bottom));
+  min-height: 100vh;
+}
+
+.layout {
+  width: min(1200px, 96vw);
+  margin: 1.2rem auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.panel {
+  backdrop-filter: blur(5px);
+  background: var(--panel);
+  border: 1px solid #ffffff;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 10px 24px #0f1f331a;
+}
+
+.board {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(15, minmax(20px, 1fr));
+  gap: 2px;
+  background: #9ab6cf;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.cell {
+  background: var(--cell);
+  border: 1px solid var(--cell-border);
+  min-height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: clamp(0.65rem, 1.4vw, 0.92rem);
+  font-weight: 700;
+}
+
+.cell.filled {
+  background: var(--tile);
+  border-color: var(--tile-border);
+}
+
+.controls-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.status-grid {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.card {
+  border: 1px solid #d8e4ef;
+  border-radius: 12px;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+h1 {
+  margin: 0;
+  font-family: "Rockwell", "Georgia", serif;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+}
+
+input,
+button {
+  border-radius: 8px;
+  border: 1px solid #b1c7db;
+  padding: 0.38rem 0.5rem;
+  font-size: 0.93rem;
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  color: #fff;
+  border: 0;
+}
+
+button:hover {
+  filter: brightness(1.06);
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.message {
+  background: #09111a;
+  color: #d7f5e2;
+  min-height: 90px;
+  border-radius: 10px;
+  padding: 0.6rem;
+  margin: 0;
+  overflow: auto;
+}
+
+.error {
+  color: #ffd7d7;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .board {
+    grid-template-columns: repeat(15, minmax(16px, 1fr));
+  }
+}

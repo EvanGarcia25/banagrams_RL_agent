@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bananagrams RL Playground</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel board-panel">
+        <header>
+          <h1>Bananagrams RL Playground</h1>
+          <p>Single-player clone with exact coordinate actions for humans and agents.</p>
+        </header>
+        <div id="board" class="board" aria-label="Game board"></div>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="status-grid">
+          <div><strong>Hand:</strong> <span id="hand"></span></div>
+          <div><strong>Tiles In Bag:</strong> <span id="bagCount"></span></div>
+          <div><strong>Valid Words:</strong> <span id="validWords"></span></div>
+          <div><strong>Last Action:</strong> <span id="lastAction"></span></div>
+        </div>
+
+        <form id="placeForm" class="card">
+          <h2>Place Letter</h2>
+          <label>Letter <input id="placeLetter" maxlength="1" required /></label>
+          <label>Row <input id="placeRow" type="number" min="0" required /></label>
+          <label>Col <input id="placeCol" type="number" min="0" required /></label>
+          <button type="submit">Place</button>
+        </form>
+
+        <form id="removeForm" class="card">
+          <h2>Remove Letter</h2>
+          <label>Row <input id="removeRow" type="number" min="0" required /></label>
+          <label>Col <input id="removeCol" type="number" min="0" required /></label>
+          <button type="submit">Remove</button>
+        </form>
+
+        <form id="dumpForm" class="card">
+          <h2>Dump Letter</h2>
+          <label>Letter <input id="dumpLetter" maxlength="1" required /></label>
+          <button type="submit">Dump</button>
+        </form>
+
+        <div class="button-row">
+          <button id="validateBtn">Validate Board</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+
+        <pre id="message" class="message" aria-live="polite"></pre>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
