@@ -111,3 +111,18 @@ Both options return the same response format. The browser display updates automa
 |------|-----|-----|-----|------|-----|-----|-----|------|-----|
 | K×2 | L×5 | M×3 | N×8 | O×11 | P×3 | Q×2 | R×9 | S×6 | T×9 |
 | U×6 | V×3 | W×3 | X×2 | Y×3 | Z×2 | | | | |
+
+
+## Playable mode:
+Run with play.py
+Commands:
+  place <letter> <row> <col>   place a tile (e.g.  place A 10 10)
+  remove <row> <col>           pick tile back to hand
+  dump <letter>                return 1 tile, draw 3 (needs ≥3 in bag)
+  reset                        start a new game
+  help                         show this message
+  quit / exit                  leave
+
+## TODO:
+- Update to a suitable dictionary
+- Convert to a gym environment for model training 
