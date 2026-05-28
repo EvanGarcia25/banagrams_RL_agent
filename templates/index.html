@@ -29,12 +29,31 @@
       <span class="info-label">Hand size</span>
       <span class="info-val" id="hand-count">—</span>
     </div>
+    <div class="info-row">
+      <span class="info-label">Replay step</span>
+      <span class="info-val" id="replay-step">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Training step</span>
+      <span class="info-val" id="training-step">—</span>
+    </div>
     <div class="info-divider"></div>
     <div class="info-section-title">Words on board</div>
     <div id="words-area" class="words-area">—</div>
     <div class="info-divider"></div>
     <div class="info-section-title">Last action</div>
     <div id="last-action" class="last-action-text">—</div>
+  </div>
+
+  <!-- Replay controls -->
+  <div class="replay-controls hidden" id="replay-controls">
+    <div class="replay-controls-row">
+      <button id="replay-prev" class="replay-button" type="button">Prev</button>
+      <button id="replay-toggle" class="replay-button" type="button">Play</button>
+      <button id="replay-next" class="replay-button" type="button">Next</button>
+    </div>
+    <input id="replay-slider" class="replay-slider" type="range" min="0" max="0" value="0" step="1" />
+    <div class="replay-hint">Use Left/Right arrows or drag the slider to move through the episode.</div>
   </div>
 
   <!-- Win overlay -->

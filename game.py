@@ -17,13 +17,18 @@ STARTING_HAND = 21
 class BananagramsGame:
     def __init__(self):
         self._dict = Dictionary.load()
+        self._rng = random.Random()
+        self.seed: int | None = None
         self.reset()
 
-    def reset(self):
+    def reset(self, seed: int | None = None):
+        if seed is not None:
+            self._rng = random.Random(seed)
+        self.seed = seed
         self.bag: list[str] = []
         for letter, count in TILE_DISTRIBUTION.items():
             self.bag.extend([letter] * count)
-        random.shuffle(self.bag)
+        self._rng.shuffle(self.bag)
 
         self.hand: list[str] = [self.bag.pop() for _ in range(STARTING_HAND)]
         self.grid: list[list[str | None]] = [[None] * GRID_SIZE for _ in range(GRID_SIZE)]
@@ -50,7 +55,7 @@ class BananagramsGame:
         if not self.hand and self.bag:
             drawn = self.bag.pop()
             self.hand.append(drawn)
-            self.last_action = f"Placed {letter} at ({row},{col}). Hand empty — peel! Drew '{drawn}'."
+            self.last_action = f"Placed {letter} at ({row},{col}). Hand empty - peel! Drew '{drawn}'."
         else:
             self.last_action = f"Placed {letter} at ({row},{col})."
 
@@ -78,11 +83,11 @@ class BananagramsGame:
         if letter not in self.hand:
             return self._err(f"'{letter}' not in hand.")
         if len(self.bag) < 3:
-            return self._err(f"Need ≥3 tiles in bag to dump (bag has {len(self.bag)}).")
+            return self._err(f"Need >=3 tiles in bag to dump (bag has {len(self.bag)}).")
 
         self.hand.remove(letter)
         self.bag.append(letter)
-        random.shuffle(self.bag)
+        self._rng.shuffle(self.bag)
         drawn = [self.bag.pop() for _ in range(3)]
         self.hand.extend(drawn)
         self.last_action = f"Dumped '{letter}', drew {drawn}."

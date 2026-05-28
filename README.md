@@ -8,8 +8,31 @@ Single-player Bananagrams game with a REST API and live browser display. Models 
 
 ```bash
 pip install -r requirements.txt
-python3 server.py          # http://localhost:8080
 ```
+
+### Live viewer
+
+```bash
+python server.py
+```
+
+This starts the browser viewer at http://localhost:8080 for the live game state.
+
+### Scripted episode recording
+
+```bash
+python demo_episode.py
+```
+
+This runs a fixed seeded command sequence, then saves a full episode log under `episodes/`.
+
+### Replay viewer
+
+```bash
+python view_episode.py
+```
+
+This replays the saved episode log in the browser, frame by frame.
 
 ---
 
@@ -102,6 +125,52 @@ print("Won:", game.won)
 ```
 
 Both options return the same response format. The browser display updates automatically either way.
+
+### Episode log schema
+
+Recorded episodes are saved as JSON with this shape:
+
+```json
+{
+  "schema_version": 1,
+  "run": {
+    "run_id": "...",
+    "source": "scripted",
+    "seed": 7,
+    "training_step": null,
+    "episode_index": null,
+    "model_name": null,
+    "checkpoint_path": null,
+    "note": "...",
+    "started_at_utc": "...",
+    "completed_at_utc": "..."
+  },
+  "initial_state": {"grid": [...], "hand": [...], "bag_count": 123, "words": [], "invalid_words": [], "connected": true, "tile_count": 0, "done": false, "won": false, "last_action": "Game started. 21 tiles drawn."},
+  "events": [
+    {
+      "step_index": 0,
+      "raw_command": "place A 10 10",
+      "command": {"kind": "place", "letter": "A", "row": 10, "col": 10},
+      "success": true,
+      "message": "Placed A at (10,10).",
+      "state_after": {...}
+    }
+  ],
+  "summary": {
+    "steps": 4,
+    "successful_steps": 4,
+    "failed_steps": 0,
+    "won": false,
+    "done": false,
+    "bag_remaining_final": 123,
+    "hand_size_final": 17,
+    "tile_count_final": 3,
+    "words_final": 1,
+    "invalid_words_final": 1,
+    "connected_final": true
+  }
+}
+```
 
 ---
 
