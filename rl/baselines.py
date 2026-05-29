@@ -2,8 +2,8 @@
 Random and greedy baselines for Bananagrams solitaire.
 
 Run evaluation:
-  python baselines.py --agent random --episodes 50
-  python baselines.py --agent greedy --episodes 50 --max-steps 5000
+  python -m rl.baselines --agent random --episodes 50
+  python -m rl.baselines --agent greedy --episodes 50 --max-steps 5000
 """
 
 from __future__ import annotations
@@ -15,7 +15,6 @@ from typing import Callable
 
 from game import GRID_SIZE, BananagramsGame
 
-# Rough Scrabble-style letter weights: higher = more willing to dump (harder to use).
 DUMP_WEIGHT = {
     "Q": 10,
     "Z": 9,

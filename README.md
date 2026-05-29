@@ -1,6 +1,6 @@
-# Bananagrams RL — Baseline
+# Bananagrams RL
 
-Single-player Bananagrams game with a REST API and live browser display. Models can drive the game over HTTP or directly via Python method calls.
+Single-player Bananagrams game with a terminal runner, episode replay viewer, and RL package.
 
 ---
 
@@ -13,7 +13,7 @@ pip install -r requirements.txt
 ### Live viewer
 
 ```bash
-python server.py
+python episode_visualization.py
 ```
 
 This starts the browser viewer at http://localhost:8080 for the live game state.
@@ -32,7 +32,26 @@ This runs a fixed seeded command sequence, then saves a full episode log under `
 python view_episode.py
 ```
 
-This replays the saved episode log in the browser, frame by frame.
+or:
+
+```bash
+python episode_visualization.py --episode-file episodes/demo_seed_7.json
+```
+
+### Terminal runner
+
+```bash
+python cli.py
+```
+
+### RL code
+
+```bash
+python -m rl.train
+python -m rl.baselines
+```
+
+The reorganized entrypoints are `cli.py` and `episode_visualization.py`.
 
 ---
 
@@ -40,15 +59,19 @@ This replays the saved episode log in the browser, frame by frame.
 
 ```
 banagrams_RL_agent/
-├── game.py          # Core game logic — BananagramsGame class
-├── dictionary.py    # Word validation (system dict or fallback)
-├── server.py        # Flask server — API + browser UI (port 8080)
-├── requirements.txt # flask>=3.0.0
+├── cli.py                 # Terminal runner and episode recorder
+├── episode_log.py         # Episode JSON schema and helpers
+├── episode_visualization.py # Flask replay viewer
+├── game.py                # Core game logic — BananagramsGame class
+├── rl/
+│   ├── env.py             # Gymnasium environment wrapper
+│   ├── train.py           # RL training and evaluation
+│   └── baselines.py       # Random and greedy baselines
 ├── static/
-│   ├── app.js       # Polls /api/state every 500ms, renders display
-│   └── style.css    # Dark grid UI
+│   ├── app.js             # Polls /api/state every 500ms, renders display
+│   └── style.css          # Viewer styling
 └── templates/
-    └── index.html   # Full-page grid layout
+  └── index.html         # Full-page replay layout
 ```
 
 ---
@@ -181,16 +204,6 @@ Recorded episodes are saved as JSON with this shape:
 | K×2 | L×5 | M×3 | N×8 | O×11 | P×3 | Q×2 | R×9 | S×6 | T×9 |
 | U×6 | V×3 | W×3 | X×2 | Y×3 | Z×2 | | | | |
 
-
-## Playable mode:
-Run with play.py
-Commands:
-  place <letter> <row> <col>   place a tile (e.g.  place A 10 10)
-  remove <row> <col>           pick tile back to hand
-  dump <letter>                return 1 tile, draw 3 (needs ≥3 in bag)
-  reset                        start a new game
-  help                         show this message
-  quit / exit                  leave
 
 ## TODO:
 - Update to a suitable dictionary

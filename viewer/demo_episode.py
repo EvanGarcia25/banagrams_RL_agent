@@ -1,4 +1,4 @@
-from play import run_scripted_episode
+from cli import run_scripted_episode
 
 
 SEED = 7
@@ -10,12 +10,16 @@ COMMANDS = [
 ]
 
 
-if __name__ == "__main__":
+def main():
     run_scripted_episode(
         COMMANDS,
         seed=SEED,
-        record_path="episodes/demo_seed_7.json",
+        record_path="viewer/episodes/demo_seed_7.json",
         pause_seconds=0.35,
         source="demo_episode",
         note="seeded demo episode",
     )
+
+
+if __name__ == "__main__":
+    main()

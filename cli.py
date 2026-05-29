@@ -1,10 +1,9 @@
-"""
-Terminal interface for playing Bananagrams solitaire.
+"""Terminal interface for playing Bananagrams solitaire.
 
 Commands:
   place <letter> <row> <col>   place a tile from hand onto the grid
   remove <row> <col>           pick a tile back from the grid into hand
-  dump <letter>                return 1 tile, draw 3 (needs ≥3 in bag)
+  dump <letter>                return 1 tile, draw 3 (needs >=3 in bag)
   reset [seed]                 start a new game
   quit / exit                  leave
 
@@ -19,7 +18,7 @@ import os
 import time
 from pathlib import Path
 
-from episode_log import (
+from viewer.episode_log import (
     append_event,
     build_episode_record,
     default_episode_path,
@@ -32,8 +31,8 @@ from episode_log import (
 )
 from game import BananagramsGame
 
-PADDING = 2          # empty cells to show around the placed-tile bounding box
-MIN_VIEW = 5         # minimum display size when nothing is placed yet
+PADDING = 2
+MIN_VIEW = 5
 
 
 def clear() -> None:
@@ -106,7 +105,7 @@ def print_help() -> None:
 Commands:
   place <letter> <row> <col>   place a tile (e.g. place A 10 10)
   remove <row> <col>           pick tile back to hand
-    dump <letter>                return 1 tile, draw 3 (needs >=3 in bag)
+  dump <letter>                return 1 tile, draw 3 (needs >=3 in bag)
   reset [seed]                 start a new game
   help                         show this message
   quit / exit                  leave

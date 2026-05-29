@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from flask import Flask, jsonify, render_template, request
 
-from episode_log import episode_frames, load_episode
+from .episode_log import episode_frames, load_episode
 from game import BananagramsGame
 
 app = Flask(__name__)
@@ -163,10 +163,6 @@ def reset():
     return jsonify(game.get_state())
 
 
-def configure_replay(episode_file: str, *, step_delay: float = 0.75) -> None:
-    viewer.set_replay(load_episode(episode_file), step_delay=step_delay)
-
-
 @app.route("/api/replay/seek", methods=["POST"])
 def replay_seek():
     if viewer.is_live():
@@ -201,6 +197,10 @@ def replay_toggle():
 @app.route("/api/replay/state")
 def replay_state():
     return jsonify(viewer.get_state())
+
+
+def configure_replay(episode_file: str, *, step_delay: float = 0.75) -> None:
+    viewer.set_replay(load_episode(episode_file), step_delay=step_delay)
 
 
 def run(*, episode_file: str | None = None, step_delay: float = 0.75) -> None:

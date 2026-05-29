@@ -1,22 +1,23 @@
 """
-Training script — Bananagrams RL agent using MaskablePPO.
+Training script - Bananagrams RL agent using MaskablePPO.
 
 Requirements:
     pip install gymnasium stable-baselines3 sb3-contrib
 
 Usage:
-    python train.py                        # train with defaults
-    python train.py --timesteps 2000000    # longer run
-    python train.py --load runs/best_model # resume / evaluate
+    python -m rl.train                        # train with defaults
+    python -m rl.train --timesteps 2000000    # longer run
+    python -m rl.train --load runs/best_model # resume / evaluate
 """
+
+from __future__ import annotations
 
 import argparse
 import os
 
 import numpy as np
-from gymnasium.wrappers import FlattenObservation
 
-from env import BananagramsEnv
+from .env import BananagramsEnv
 
 
 def make_env(render_mode=None):
@@ -29,7 +30,6 @@ def make_env(render_mode=None):
 def train(timesteps: int, save_dir: str, n_envs: int):
     try:
         from sb3_contrib import MaskablePPO
-        from sb3_contrib.common.maskable.utils import get_action_masks
         from sb3_contrib.common.wrappers import ActionMasker
         from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
     except ImportError:
@@ -42,7 +42,6 @@ def train(timesteps: int, save_dir: str, n_envs: int):
 
     def _wrapped_env():
         env = BananagramsEnv()
-        # ActionMasker tells SB3 how to retrieve the mask each step
         env = ActionMasker(env, lambda e: e.action_masks())
         return env
 
@@ -54,14 +53,13 @@ def train(timesteps: int, save_dir: str, n_envs: int):
         vec_env,
         verbose=1,
         tensorboard_log=os.path.join(save_dir, "tb_logs"),
-        # Hyperparameters — reasonable starting point, tune as needed
         n_steps=512,
         batch_size=64,
         n_epochs=4,
         gamma=0.99,
         gae_lambda=0.95,
         clip_range=0.2,
-        ent_coef=0.01,      # encourage exploration
+        ent_coef=0.01,
         learning_rate=3e-4,
     )
 
@@ -111,21 +109,25 @@ def evaluate(model_path: str, n_episodes: int = 10):
     env.close()
 
 
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Train/evaluate Bananagrams RL agent")
-    parser.add_argument("--timesteps", type=int,   default=500_000,
+    parser.add_argument("--timesteps", type=int, default=500_000,
                         help="Total training timesteps (default: 500000)")
-    parser.add_argument("--envs",      type=int,   default=4,
+    parser.add_argument("--envs", type=int, default=4,
                         help="Number of parallel environments (default: 4)")
-    parser.add_argument("--save-dir",  type=str,   default="runs",
+    parser.add_argument("--save-dir", type=str, default="runs",
                         help="Directory to save model + logs (default: runs/)")
-    parser.add_argument("--load",      type=str,   default=None,
+    parser.add_argument("--load", type=str, default=None,
                         help="Path to a saved model to evaluate instead of training")
-    parser.add_argument("--eval-eps",  type=int,   default=10,
+    parser.add_argument("--eval-eps", type=int, default=10,
                         help="Episodes to run during evaluation (default: 10)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.load:
         evaluate(args.load, n_episodes=args.eval_eps)
     else:
         train(timesteps=args.timesteps, save_dir=args.save_dir, n_envs=args.envs)
+
+
+if __name__ == "__main__":
+    main()

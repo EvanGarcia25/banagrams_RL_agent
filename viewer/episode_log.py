@@ -159,4 +159,4 @@ def episode_frames(episode: dict[str, Any]) -> list[dict[str, Any]]:
 def default_episode_path(*, source: str, seed: int | None = None, suffix: str = ".json") -> Path:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     seed_part = f"_seed-{seed}" if seed is not None else ""
-    return Path("episodes") / f"{source}_{stamp}{seed_part}{suffix}"
+    return Path("viewer/episodes") / f"{source}_{stamp}{seed_part}{suffix}"
