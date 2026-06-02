@@ -1,4 +1,4 @@
-"""
+ut is"""
 Training script - Bananagrams RL agent using MaskablePPO.
 
 Requirements:
@@ -84,7 +84,8 @@ def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
     try:
         from sb3_contrib import MaskablePPO
         from sb3_contrib.common.wrappers import ActionMasker
-        from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
+        from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor, DummyVecEnv
+        from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnNoModelImprovement
     except ImportError:
         raise SystemExit(
             "Missing dependencies. Run:\n"
@@ -117,6 +118,29 @@ def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
     vec_env = SubprocVecEnv([make_env(i) for i in range(actual_n_envs)])
     vec_env = VecMonitor(vec_env, filename=os.path.join(save_dir, "monitor"))
 
+    def make_eval_env():
+        env = BananagramsEnv()
+        env = ActionMasker(env, lambda e: e.action_masks())
+        return env
+
+    eval_env = DummyVecEnv([make_eval_env])
+
+    stop_train_callback = StopTrainingOnNoModelImprovement(
+        max_no_improvement_evals=5, 
+        min_evals=1, 
+        verbose=1
+    )
+
+    eval_callback = EvalCallback(
+        eval_env,
+        eval_freq=max(1, 50_000 // actual_n_envs),
+        callback_after_eval=stop_train_callback,
+        best_model_save_path=os.path.join(save_dir, 'trained_models', 'best_model'),
+        deterministic=True,
+        n_eval_episodes=10,
+        verbose=1
+    )
+
     policy_kwargs = dict(
         features_extractor_class=BananagramsFeatureExtractor,
         features_extractor_kwargs=dict(features_dim=512),
@@ -140,14 +164,36 @@ def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
 
     mode_str = "OVERFIT mode (1 env, fixed seed 42)" if overfit else f"{actual_n_envs} parallel envs"
     print(f"Training for {timesteps:,} timesteps across {mode_str}...")
-    model.learn(
-        total_timesteps=timesteps,
-        progress_bar=False,
-    )
+    
+    try:
+        model.learn(
+            total_timesteps=timesteps,
+            callback=eval_callback,
+            progress_bar=False,
+        )
+    except Exception as e:
+        print(f"Training interrupted: {e}")
 
-    model.save(os.path.join(save_dir, "final_model"))
-    print(f"Model saved to {save_dir}/final_model.zip")
+    best_model_path = os.path.join(save_dir, 'trained_models', 'best_model', 'best_model.zip')
+    if os.path.exists(best_model_path):
+        print(f"Loading best model from {best_model_path} before saving final...")
+        model = MaskablePPO.load(best_model_path, env=vec_env)
+
+    final_model_path = os.path.join(save_dir, 'trained_models', "final_model")
+    model.save(final_model_path)
+    print(f"Final model saved to {final_model_path}.zip")
     vec_env.close()
+
+    try:
+        from eval_model import graph_metrics
+        monitor_csv = os.path.join(save_dir, "monitor.monitor.csv")
+        plot_out = os.path.join(save_dir, "metrics", "learning_curve.png")
+        os.makedirs(os.path.join(save_dir, "metrics"), exist_ok=True)
+        if os.path.exists(monitor_csv):
+            graph_metrics(monitor_csv, plot_out)
+    except Exception as e:
+        print(f"Could not automatically graph metrics: {e}")
+
     return model
 
 
