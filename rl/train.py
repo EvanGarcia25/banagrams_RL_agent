@@ -1,4 +1,4 @@
-ut is"""
+"""
 Training script - Bananagrams RL agent using MaskablePPO.
 
 Requirements:
