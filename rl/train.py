@@ -27,6 +27,59 @@ def make_env(render_mode=None):
     return _init
 
 
+import torch
+import torch.nn as nn
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+
+class BananagramsFeatureExtractor(BaseFeaturesExtractor):
+    def __init__(self, observation_space, features_dim: int = 512):
+        super().__init__(observation_space, features_dim)
+        
+        self.embedding = nn.Embedding(num_embeddings=27, embedding_dim=16)
+        
+        self.cnn = nn.Sequential(
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Flatten(),
+        )
+        
+        cnn_out_dim = 64 * 5 * 5 # 1600
+        scalar_in_dim = 27 # 26 for hand + 1 for bag_count
+        
+        self.linear = nn.Sequential(
+            nn.Linear(cnn_out_dim + scalar_in_dim, features_dim),
+            nn.ReLU()
+        )
+
+    def forward(self, observations: dict[str, torch.Tensor]) -> torch.Tensor:
+        grid = observations["grid"]
+        if len(grid.shape) == 2:
+            grid = grid.unsqueeze(0)
+        if len(grid.shape) == 4 and grid.shape[1] == 1:
+            grid = grid.squeeze(1)
+        if len(grid.shape) == 4 and grid.shape[3] == 1:
+            grid = grid.squeeze(3)
+            
+        grid = grid.long()
+        embedded = self.embedding(grid)
+        embedded = embedded.permute(0, 3, 1, 2)
+        
+        cnn_out = self.cnn(embedded)
+        
+        hand = observations["hand"].float()
+        bag = observations["bag_count"].float()
+        
+        if len(hand.shape) == 1:
+            hand = hand.unsqueeze(0)
+            bag = bag.unsqueeze(0)
+            
+        combined = torch.cat([cnn_out, hand, bag], dim=1)
+        return self.linear(combined)
+
 def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
     try:
         from sb3_contrib import MaskablePPO
@@ -64,9 +117,15 @@ def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
     vec_env = SubprocVecEnv([make_env(i) for i in range(actual_n_envs)])
     vec_env = VecMonitor(vec_env, filename=os.path.join(save_dir, "monitor"))
 
+    policy_kwargs = dict(
+        features_extractor_class=BananagramsFeatureExtractor,
+        features_extractor_kwargs=dict(features_dim=512),
+    )
+
     model = MaskablePPO(
         "MultiInputPolicy",
         vec_env,
+        policy_kwargs=policy_kwargs,
         verbose=1,
         tensorboard_log=os.path.join(save_dir, "tb_logs"),
         n_steps=512,

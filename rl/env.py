@@ -210,7 +210,8 @@ class BananagramsEnv(gym.Env):
         score = 0.0
         for w, coords in words_info:
             if self.game._dict.is_valid(w) and not coords.isdisjoint(main_grid):
-                score += ((len(w) - 1.5) ** 2) / 2.0
+                # Buffed reward: a 4-letter word yields ~15.6 points
+                score += ((len(w) - 1.5) ** 2) * 2.5
         return score
 
     def reset(self, seed=None, options=None):
