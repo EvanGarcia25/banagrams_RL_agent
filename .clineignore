@@ -1,0 +1,8 @@
+.git/
+node_modules/
+env/
+venv/
+__pycache__/
+viewer/episodes/
+*.ipynb
+*.txt

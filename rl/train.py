@@ -27,7 +27,7 @@ def make_env(render_mode=None):
     return _init
 
 
-def train(timesteps: int, save_dir: str, n_envs: int):
+def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
     try:
         from sb3_contrib import MaskablePPO
         from sb3_contrib.common.wrappers import ActionMasker
@@ -40,12 +40,28 @@ def train(timesteps: int, save_dir: str, n_envs: int):
 
     os.makedirs(save_dir, exist_ok=True)
 
-    def _wrapped_env():
-        env = BananagramsEnv()
-        env = ActionMasker(env, lambda e: e.action_masks())
-        return env
+    def make_env(rank):
+        def _init():
+            import gymnasium as gym
+            class FixedSeedWrapper(gym.Wrapper):
+                def __init__(self, env, seed):
+                    super().__init__(env)
+                    self._fixed_seed = seed
+                def reset(self, **kwargs):
+                    kwargs["seed"] = self._fixed_seed
+                    return self.env.reset(**kwargs)
+                def action_masks(self):
+                    return self.env.action_masks()
 
-    vec_env = SubprocVecEnv([_wrapped_env] * n_envs)
+            env = BananagramsEnv()
+            if overfit:
+                env = FixedSeedWrapper(env, 42)
+            env = ActionMasker(env, lambda e: e.action_masks())
+            return env
+        return _init
+
+    actual_n_envs = 1 if overfit else n_envs
+    vec_env = SubprocVecEnv([make_env(i) for i in range(actual_n_envs)])
     vec_env = VecMonitor(vec_env, filename=os.path.join(save_dir, "monitor"))
 
     model = MaskablePPO(
@@ -63,10 +79,11 @@ def train(timesteps: int, save_dir: str, n_envs: int):
         learning_rate=3e-4,
     )
 
-    print(f"Training for {timesteps:,} timesteps across {n_envs} parallel envs...")
+    mode_str = "OVERFIT mode (1 env, fixed seed 42)" if overfit else f"{actual_n_envs} parallel envs"
+    print(f"Training for {timesteps:,} timesteps across {mode_str}...")
     model.learn(
         total_timesteps=timesteps,
-        progress_bar=True,
+        progress_bar=False,
     )
 
     model.save(os.path.join(save_dir, "final_model"))
@@ -121,12 +138,15 @@ def main(argv: list[str] | None = None) -> None:
                         help="Path to a saved model to evaluate instead of training")
     parser.add_argument("--eval-eps", type=int, default=10,
                         help="Episodes to run during evaluation (default: 10)")
+    parser.add_argument("--overfit", action="store_true",
+                        help="Run an overfit test using a fixed seed (sets default timesteps to 100,000)")
     args = parser.parse_args(argv)
 
     if args.load:
         evaluate(args.load, n_episodes=args.eval_eps)
     else:
-        train(timesteps=args.timesteps, save_dir=args.save_dir, n_envs=args.envs)
+        timesteps = 100_000 if args.overfit and args.timesteps == 500_000 else args.timesteps
+        train(timesteps=timesteps, save_dir=args.save_dir, n_envs=args.envs, overfit=args.overfit)
 
 
 if __name__ == "__main__":

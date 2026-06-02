@@ -4,6 +4,9 @@ Random and greedy baselines for Bananagrams solitaire.
 Run evaluation:
   python -m rl.baselines --agent random --episodes 50
   python -m rl.baselines --agent greedy --episodes 50 --max-steps 5000
+
+Mask validation (run this before any training run):
+  python -m rl.baselines --agent mask-check --episodes 1 --max-steps 2000
 """
 
 from __future__ import annotations
@@ -13,7 +16,10 @@ import random
 from functools import partial
 from typing import Callable
 
+import numpy as np
+
 from game import GRID_SIZE, BananagramsGame
+from rl.env import BananagramsEnv, N_ACTIONS
 
 DUMP_WEIGHT = {
     "Q": 10,
@@ -182,14 +188,83 @@ def run_episode(step_fn: Callable[[BananagramsGame], dict], max_steps: int) -> d
     return {"won": False, "steps": max_steps, "reason": "max_steps"}
 
 
+def run_mask_validation(max_steps: int = 2000, seed: int | None = 0) -> None:
+    """
+    Stress-test the action_masks() implementation by stepping BananagramsEnv
+    with a random-masked agent.  Catches three failure modes:
+      1. All-False mask  -> no legal action exists (mask bug or deadlock)
+      2. Illegal action  -> game engine raises / returns success=False for a
+                            masked-True action (mask too permissive)
+      3. Crash           -> any unhandled exception in step()
+
+    Run this before starting a real training run:
+      python -m rl.baselines --agent mask-check --max-steps 2000
+    """
+    rng = random.Random(seed)
+    env = BananagramsEnv()
+    obs, _ = env.reset(seed=seed)
+
+    n_steps = 0
+    n_all_false = 0
+    n_illegal = 0
+    n_episodes = 0
+
+    print(f"[mask-check] Starting mask validation for {max_steps} steps "
+          f"(seed={seed}, action_space={N_ACTIONS}) ...")
+
+    for step_idx in range(1, max_steps + 1):
+        mask = env.action_masks()
+        allowed = np.where(mask)[0]
+
+        if allowed.size == 0:
+            n_all_false += 1
+            print(f"  [WARN] Step {step_idx}: mask returned all-False "
+                  f"(bag={env.game.get_state()['bag_count']}, "
+                  f"hand={env.game.get_state()['hand']}). "
+                  f"Resetting environment.")
+            obs, _ = env.reset(seed=rng.randint(0, 2**31 - 1))
+            n_episodes += 1
+            continue
+
+        action = int(rng.choice(allowed))
+        obs, reward, terminated, truncated, info = env.step(action)
+        n_steps += 1
+
+        if not info["success"]:
+            n_illegal += 1
+            decoded = env.decode_action(action)
+            print(f"  [ERROR] Step {step_idx}: masked-True action {action} "
+                  f"({decoded}) was REJECTED by game engine: "
+                  f"'{info['message']}'")
+
+        if terminated or truncated:
+            reason = "won" if info["won"] else ("truncated" if truncated else "done")
+            print(f"  Episode {n_episodes + 1} ended at step {step_idx} ({reason}). Resetting.")
+            obs, _ = env.reset(seed=rng.randint(0, 2**31 - 1))
+            n_episodes += 1
+
+    env.close()
+    print(f"\n[mask-check] Done. "
+          f"steps={n_steps}  episodes={n_episodes}  "
+          f"all-False events={n_all_false}  illegal-action events={n_illegal}")
+    if n_all_false == 0 and n_illegal == 0:
+        print("[mask-check] PASS - no mask violations detected.")
+    else:
+        print("[mask-check] FAIL - see warnings above.")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Bananagrams baseline evaluation")
-    p.add_argument("--agent", choices=("random", "greedy"), default="random")
+    p.add_argument("--agent", choices=("random", "greedy", "mask-check"), default="random")
     p.add_argument("--episodes", type=int, default=30)
     p.add_argument("--max-steps", type=int, default=8000)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--greedy-max-eval", type=int, default=48, help="Greedy: max candidate placements sampled per step")
     args = p.parse_args()
+
+    if args.agent == "mask-check":
+        run_mask_validation(max_steps=args.max_steps, seed=args.seed)
+        return
 
     if args.agent == "random":
         step_fn: Callable[[BananagramsGame], dict] = step_random

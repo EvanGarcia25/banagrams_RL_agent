@@ -2,16 +2,19 @@ import random
 from collections import deque
 from dictionary import Dictionary
 
+import math
+
+# Original distribution halved (adjusted to sum exactly to 72)
 TILE_DISTRIBUTION = {
-    'A': 13, 'B': 3,  'C': 3,  'D': 6,  'E': 18, 'F': 3,
-    'G': 4,  'H': 3,  'I': 12, 'J': 2,  'K': 2,  'L': 5,
-    'M': 3,  'N': 8,  'O': 11, 'P': 3,  'Q': 2,  'R': 9,
-    'S': 6,  'T': 9,  'U': 6,  'V': 3,  'W': 3,  'X': 2,
-    'Y': 3,  'Z': 2,
-}  # 144 total
+    'A': 7,  'B': 2,  'C': 2,  'D': 3,  'E': 9,  'F': 1,
+    'G': 2,  'H': 1,  'I': 6,  'J': 1,  'K': 1,  'L': 3,
+    'M': 1,  'N': 4,  'O': 6,  'P': 1,  'Q': 1,  'R': 5,
+    'S': 3,  'T': 5,  'U': 3,  'V': 1,  'W': 1,  'X': 1,
+    'Y': 1,  'Z': 1,
+}  # 72 total
 
 GRID_SIZE = 20
-STARTING_HAND = 21
+STARTING_HAND = 7
 
 
 class BananagramsGame:
@@ -32,7 +35,7 @@ class BananagramsGame:
 
         self.hand: list[str] = [self.bag.pop() for _ in range(STARTING_HAND)]
         self.grid: list[list[str | None]] = [[None] * GRID_SIZE for _ in range(GRID_SIZE)]
-        self.last_action: str = "Game started. 21 tiles drawn."
+        self.last_action: str = "Game started. 7 tiles drawn."
         self.done: bool = False
         self.won: bool = False
 

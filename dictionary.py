@@ -24,7 +24,7 @@ FALLBACK_WORDS = {
     "band", "hand", "land", "sand", "and", "end",
     "ring", "sing", "king", "wing", "ding", "ping",
     "back", "hack", "jack", "lack", "pack", "rack", "sack", "tack",
-    "deck", "neck", "peck", "beck",
+    "deck", "neck", "peck", "beck", "dance",
     "bold", "cold", "fold", "gold", "hold", "mold", "old", "sold", "told",
     "base", "case", "face", "lace", "pace", "race", "vase",
     "able", "table", "fable", "cable", "sable",
@@ -70,6 +70,13 @@ class Dictionary:
 
     @classmethod
     def load(cls) -> "Dictionary":
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        dict_path = os.path.join(base_dir, "dictionary.txt")
+        if os.path.exists(dict_path):
+            with open(dict_path, encoding="utf-8") as f:
+                words = {line.strip().lower() for line in f if line.strip().isalpha()}
+            return cls(words)
+            
         for path in ("/usr/share/dict/words", "/usr/dict/words"):
             if os.path.exists(path):
                 with open(path) as f:

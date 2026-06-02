@@ -27,7 +27,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Hand bar (fixed, top, centered) ────────────────────────── */
+/* ── Hand bar (fixed, top, centered) ── 7-tile max, no scroll needed ── */
 .hand-bar {
   position: fixed;
   top: 14px;
@@ -35,25 +35,23 @@ body {
   transform: translateX(-50%);
   display: flex;
   flex-wrap: nowrap;
-  gap: 4px;
+  gap: 6px;
   z-index: 100;
-  max-width: 90vw;
-  overflow-x: auto;
-  padding: 0 4px;
+  padding: 0 8px;
 }
 
 .tile {
   flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: 4px;
+  width: 48px;
+  height: 48px;
+  border-radius: 5px;
   background: var(--tile-bg);
   border: 1px solid var(--tile-border);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.55);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--tile-text);
   user-select: none;
@@ -64,7 +62,7 @@ body {
 .game-area {
   display: flex;
   justify-content: center;
-  padding-top: 80px;   /* must be a multiple of --cell so grid aligns with bg */
+  padding-top: 88px;   /* must be a multiple of --cell so grid aligns with bg */
   padding-bottom: 56px;
   min-height: 100vh;
 }

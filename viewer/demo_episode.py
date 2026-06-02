@@ -3,10 +3,11 @@ from cli import run_scripted_episode
 
 SEED = 7
 COMMANDS = [
-    "place A 10 10",
+    "place D 10 10",
     "place A 10 11",
-    "remove 10 10",
-    "place B 10 12",
+    "place N 10 12",
+    "place C 10 13",
+    "place E 10 14",
 ]
 
 
