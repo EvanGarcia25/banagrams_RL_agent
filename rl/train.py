@@ -126,8 +126,8 @@ def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
     eval_env = DummyVecEnv([make_eval_env])
 
     stop_train_callback = StopTrainingOnNoModelImprovement(
-        max_no_improvement_evals=5, 
-        min_evals=1, 
+        max_no_improvement_evals=40,  # ~2,000,000 total steps patience
+        min_evals=60,                 # Grace period: ~3,000,000 total steps before stopping can trigger
         verbose=1
     )
 
@@ -158,7 +158,7 @@ def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
         gamma=0.99,
         gae_lambda=0.95,
         clip_range=0.2,
-        ent_coef=0.01,
+        ent_coef=0.02,
         learning_rate=3e-4,
     )
 
@@ -171,7 +171,7 @@ def train(timesteps: int, save_dir: str, n_envs: int, overfit: bool = False):
             callback=eval_callback,
             progress_bar=False,
         )
-    except Exception as e:
+    except (Exception, KeyboardInterrupt) as e:
         print(f"Training interrupted: {e}")
 
     best_model_path = os.path.join(save_dir, 'trained_models', 'best_model', 'best_model.zip')
